@@ -1,0 +1,58 @@
+---
+title: "Regression Test"
+author: "Chai Kau Yu, Davion"
+date: "`r Sys.Date()`"
+output:
+  prettydoc::html_pretty:
+    theme: HPSTR
+    highlight: github
+    math: katex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, results="hide")
+```
+
+
+```{r requirements_check, message=FALSE}
+# if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+# if (!require('tidyr')) install.packages('tidyr'); library('tidyr')
+if (!require('lubridate')) install.packages('lubridate'); library('lubridate')
+if (!require('tidyquant')) install.packages('tidyquant'); library('tidyquant')
+if (!require('plotly')) install.packages('plotly'); library('plotly')
+```
+
+## Regression Models Testing using Covid Data
+
+#### Data Ingestion
+
+```{r data_ingestion, echo=TRUE, results='markup'}
+covid_malaysia_endpoint <- "https://raw.githubusercontent.com/MoH-Malaysia/covid19-public/main/epidemic/cases_malaysia.csv"
+covid_malaysia_df <- read.csv(covid_malaysia_endpoint, header=TRUE)
+covid_malaysia_df$date <- as.Date(covid_malaysia_df$date, format="%Y-%m-%d")
+str(covid_malaysia_df)
+dim(covid_malaysia_df)
+```
+
+#### A brief Look on the graph 
+```{r time_series, echo=TRUE, results='markup'}
+fig <- plot_ly(covid_malaysia_df, type = 'scatter', mode = 'lines')%>%
+  add_trace(x = ~date, y = ~cases_new, name = 'Daily New Cvoid Cases')%>%
+  layout(showlegend = F)
+options(warn = -1)
+
+fig <- fig %>%
+  layout(
+         xaxis = list(zerolinecolor = '#ffff',
+                      zerolinewidth = 2,
+                      gridcolor = 'ffff'),
+         yaxis = list(zerolinecolor = '#ffff',
+                      zerolinewidth = 2,
+                      gridcolor = 'ffff'),
+         plot_bgcolor='#e5ecf6', width = 1200)
+
+
+fig
+```
+
+#### End of Test Document
