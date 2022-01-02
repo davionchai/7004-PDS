@@ -1,7 +1,12 @@
 ---
-title: "Regression Test"
-author: "Chai Kau Yu, Davion"
-date: "`r Sys.Date()`"
+title: "A Deep Analysis of Malaysian Covid-19 Cases in 2021"
+author: |
+  | Chai Kau Yu, Davion (S2019226)
+  | William Heng Chun Meng (S2005592)
+  | Lim Mei Cee (17162537)
+  | Kamal Suria Asri Raja (S2110703)
+  | Hong Zi Shen (S2114600)
+date: "`r format(Sys.time(), '%d/%m/%y')`"
 output:
   prettydoc::html_pretty:
     theme: HPSTR
@@ -12,29 +17,55 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo=TRUE, results="hide")
 ```
+TODO: Refine title
 
+## Initial Questions
+TODO: Must have at least two questions. It is best to have different types of problems, ie one regression, and one classification
 
-```{r requirements_check, message=FALSE}
-# if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
-# if (!require('tidyr')) install.packages('tidyr'); library('tidyr')
-if (!require('lubridate')) install.packages('lubridate'); library('lubridate')
-if (!require('tidyquant')) install.packages('tidyquant'); library('tidyquant')
-if (!require('plotly')) install.packages('plotly'); library('plotly')
+1. 
+2.
+
+## Objective
+TODO: Analysis: Identify the questions, what is the objective/goal of processing this dataset? What answers are you interested to find through this dataset.<br>
+TODO: Determine the details about the dataset (eg. title, year, the purpose of dataset, dimension content, structure, summary) by exploring the raw data.<br>
+TODO: Short introduction with objective of the project.<br>
+
+## Data Cleaning and Preprocessing
+TODO: Which section of the data do you need to tidy?<br>
+TODO: Prepare data for analysis by correcting the variables and contents of the data.<br>
+TODO: Putting it all together as a new cleaned/processed dataset: For this task, you are also encouraged to explore any cleaning packages in R other than those learned in the course (diplyr, tidyr, lubridate, etc).<br>
+
+```{r requirements_check, message=FALSE, warning=FALSE}
+# # if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+# # if (!require('tidyr')) install.packages('tidyr'); library('tidyr')
+if (!require('lubridate'))
+  install.packages('lubridate');
+if (!require('tidyquant'))
+  install.packages('tidyquant', repos='https://cran.asia/');
+if (!require('plotly'))
+  install.packages('plotly', repos='https://cran.asia/');
+
+library('lubridate')
+library('plotly')
+library('tidyquant')
 ```
-
-## Regression Models Testing using Covid Data
 
 #### Data Ingestion
 
 ```{r data_ingestion, echo=TRUE, results='markup'}
-covid_malaysia_endpoint <- "https://raw.githubusercontent.com/MoH-Malaysia/covid19-public/main/epidemic/cases_malaysia.csv"
+# covid_malaysia_endpoint <- "https://raw.githubusercontent.com/MoH-Malaysia/covid19-public/main/epidemic/cases_malaysia.csv"
+covid_malaysia_endpoint <- 'cases_malaysia.csv'
 covid_malaysia_df <- read.csv(covid_malaysia_endpoint, header=TRUE)
 covid_malaysia_df$date <- as.Date(covid_malaysia_df$date, format="%Y-%m-%d")
 str(covid_malaysia_df)
 dim(covid_malaysia_df)
 ```
 
+## Exploratory Data Analysis
+TODO: Results may include visualization, prediction, evaluation of models and discussion of output
+
 #### A brief Look on the graph 
+
 ```{r time_series, echo=TRUE, results='markup'}
 fig <- plot_ly(covid_malaysia_df, type = 'scatter', mode = 'lines')%>%
   add_trace(x = ~date, y = ~cases_new, name = 'Daily New Cvoid Cases')%>%
@@ -55,4 +86,22 @@ fig <- fig %>%
 fig
 ```
 
-#### End of Test Document
+## Machine Learning
+TODO: Results may include visualization, prediction, evaluation of models and discussion of output
+
+## Conclusion
+TODO: Conclusion
+
+## Presentation and Submission
+TODO Report: Submission will be an R markdown published at Rpubs, and the link is to be submitted in spectrum. The R markdown may include the following:
+
+*	Short introduction with objective of the project.
+*	Explanation of all the processes involved in the project
+*	Results may include visualization, prediction, evaluation of models and discussion of output
+*	Conclusion
+
+TODO: Only one member per group will submit the report.<br>
+TODO: Each group is required to prepare a 10 minute presentation with powerpoint.<br>
+TODO: Both group members must present their parts.
+
+## End of Report
