@@ -35,30 +35,99 @@ TODO: Which section of the data do you need to tidy?<br>
 TODO: Prepare data for analysis by correcting the variables and contents of the data.<br>
 TODO: Putting it all together as a new cleaned/processed dataset: For this task, you are also encouraged to explore any cleaning packages in R other than those learned in the course (diplyr, tidyr, lubridate, etc).<br>
 
-```{r requirements_check, message=FALSE, warning=FALSE}
-# # if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
-# # if (!require('tidyr')) install.packages('tidyr'); library('tidyr')
-if (!require('lubridate'))
-  install.packages('lubridate');
-if (!require('tidyquant'))
-  install.packages('tidyquant', repos='https://cran.asia/');
+* Step 1 : Import libraries
+* Step 2 : Import dataset
+* Step 3 : Handle missing/duplicate
+* Step 4 : Preprocessing
+
+#### Import libraries
+
+```{r import_libraries, message=FALSE, warning=FALSE}
+# if (!require('dplyr'))
+#  install.packages('dplyr', repos='https://cran.asia/');
+if (!require('kableExtra'))
+  install.packages('kableExtra', repos='https://cran.asia/');
+# if (!require('lubridate'))
+#   install.packages('lubridate', repos='https://cran.asia/');
 if (!require('plotly'))
   install.packages('plotly', repos='https://cran.asia/');
+if (!require('plyr'))
+  install.packages('plyr', repos='https://cran.asia/');
+if (!require('raster'))
+  install.packages('raster', repos='https://cran.asia/');
+if (!require('scales'))
+  install.packages('scales', repos='https://cran.asia/');
+# if (!require('tidyquant'))
+#   install.packages('tidyquant', repos='https://cran.asia/');
+# if (!require('tidyr'))
+#   install.packages('tidyr', repos='https://cran.asia/');
 
-library('lubridate')
-library('plotly')
-library('tidyquant')
+
+# library(dplyr)
+library(kableExtra)
+# library(lubridate)
+library(plotly)
+library(plyr)
+library(raster)
+library(scales)
+# library(tidyquant)
+# library('tidyr')
 ```
 
-#### Data Ingestion
+#### Import dataset
 
-```{r data_ingestion, echo=TRUE, results='markup'}
-# covid_malaysia_endpoint <- "https://raw.githubusercontent.com/MoH-Malaysia/covid19-public/main/epidemic/cases_malaysia.csv"
+```{r import_dataset, echo=TRUE, results='markup', result='asis'}
+# covid_malaysia_endpoint <- 'https://raw.githubusercontent.com/MoH-Malaysia/covid19-public/main/epidemic/cases_malasia.csv'
+# covid_state_endpoint <- 'https://raw.githubusercontent.com/MoH-Malaysia/covid19-public/main/epidemic/cases_state.csv'
 covid_malaysia_endpoint <- 'cases_malaysia.csv'
-covid_malaysia_df <- read.csv(covid_malaysia_endpoint, header=TRUE)
-covid_malaysia_df$date <- as.Date(covid_malaysia_df$date, format="%Y-%m-%d")
-str(covid_malaysia_df)
-dim(covid_malaysia_df)
+covid_state_endpoint <- 'cases_state.csv'
+
+df <- read.csv(covid_malaysia_endpoint, header=TRUE)
+df_state <- read.csv(covid_state_endpoint, header=TRUE)
+
+# Check the structure of the dataframe
+str(df)
+str(df_state)
+
+# Check the dimension of the dataframe
+dim(df)
+dim(df_state)
+
+# Check the first 6 rows
+head(df) %>% kable('html') %>% kable_styling(font_size = 12)
+head(df_state) %>% kable('html') %>% kable_styling(font_size = 12)
+
+# Examine the statistics data
+summary(df) %>% kable('html') %>% kable_styling(font_size = 12)
+summary(df_state) %>% kable('html') %>% kable_styling(font_size = 12)
+```
+
+#### Handle missing/duplicate values
+
+```{r handle_missing, echo=TRUE, results='markup', result='asis'}
+# Check for the columns with missing values
+colSums(is.na(df)) %>% kable('html') %>% kable_styling(font_size = 12)
+colSums(is.na(df_state)) %>% kable('html') %>% kable_styling(font_size = 12)
+
+# Show first few rows of the missing values
+head(df[rowSums(is.na(df)) > 0,]) %>% kable('html') %>% kable_styling(font_size = 12)
+head(df[rowSums(is.na(df_state)) > 0,]) %>% kable('html') %>% kable_styling(font_size = 12)
+
+# The missing rows for df can be ignored as there are 2020 data. 2021 data contains more columns.
+# There is no missing rows for df_state.
+
+# Check for duplicate values
+df[duplicated(df)]
+df[duplicated(df_state)]
+
+# There are no duplicated rows
+```
+
+#### Preprocessing
+
+```{r preprocessing, echo=TRUE, results='markup', result='asis'}
+df$date <- as.Date(df$date, format='%Y-%m-%d')
+df_state$date <- as.Date(df_state$date, format='%Y-%m-%d')
 ```
 
 ## Exploratory Data Analysis
@@ -67,7 +136,7 @@ TODO: Results may include visualization, prediction, evaluation of models and di
 #### A brief Look on the graph 
 
 ```{r time_series, echo=TRUE, results='markup'}
-fig <- plot_ly(covid_malaysia_df, type = 'scatter', mode = 'lines')%>%
+fig <- plot_ly(df, type = 'scatter', mode = 'lines')%>%
   add_trace(x = ~date, y = ~cases_new, name = 'Daily New Cvoid Cases')%>%
   layout(showlegend = F)
 options(warn = -1)
@@ -84,6 +153,48 @@ fig <- fig %>%
 
 
 fig
+```
+
+#### Density Map
+
+```{r denity_map, echo=TRUE, results='markup'}
+
+df_state <- df_state %>%
+  mutate(date = as.Date(df_state$date, format = "%Y-%m-%d")) %>%
+  filter(date == as.Date('2021-09-01')) %>%
+  mutate(state = replace(state, state == "W.P. Kuala Lumpur", "Kuala Lumpur")) %>%
+  mutate(state = replace(state, state == "W.P. Labuan", "Labuan")) %>%
+  mutate(state = replace(state, state == "W.P. Putrajaya", "Putrajaya")) %>%
+  arrange(state) %>%
+  dplyr::rename(NAME_1 = state)
+  
+malaysia <- getData("GADM", country = "MYS", level = 1)
+malaysia@data$id <- rownames(malaysia@data)
+malaysia@data <- join(malaysia@data, df_state, by = "NAME_1")
+malaysia_df <- fortify(malaysia)
+malaysia_df <- join(malaysia_df, malaysia@data, by = "id")
+
+theme_opts <- list(theme(
+  panel.grid.minor = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.background = element_blank(),
+  plot.background = element_blank(),
+  axis.line = element_blank(),
+  axis.text.x = element_blank(),
+  axis.text.y = element_blank(),
+  axis.ticks = element_blank(),
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank(),
+  plot.title = element_blank()
+))
+
+# https://garthtarr.github.io/meatR/ggplot_extensions.html
+# https://rstudio-pubs-static.s3.amazonaws.com/160207_ebe47475bb7744429b9bd4c908e2dc45.html
+ggplot() +
+  geom_polygon(data = malaysia_df, aes(x = long, y = lat, group = group, fill = cases_new), color = "white", size = 0.25) +
+  theme(aspect.ratio = 2/5) +
+  scale_fill_distiller(name = "No. of New Cases", palette = "YlOrRd", direction=1, breaks = pretty_breaks(n = 5)) +
+  labs(title = paste('Number of New Cases in Each State on', '2021-09-01'))
 ```
 
 ## Machine Learning
