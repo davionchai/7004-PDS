@@ -56,8 +56,6 @@ data_test <- df_data[-split_index,]
 
 linear_model <- lm(cases_new~cases_active,data=data_train)
 summary(linear_model)
-# linear_model <- train(cases_new~date, data=data_train, method="lm", trControl=data_train_control)
-
 plot(linear_model)
 ```
 
@@ -66,12 +64,14 @@ linear_prediction <- linear_model %>% predict(data_test)
 linear_compare <- data.frame(actual=data_test$cases_new, predicted=linear_prediction)
 head(linear_compare)
 ```
+
 ```{r linear_performance, echo=TRUE}
-data.frame(
+linear_performance <- data.frame(
   R2 = R2(linear_prediction, data_test$cases_new),
   RMSE = RMSE(linear_prediction, data_test$cases_new),
   MAE = MAE(linear_prediction, data_test$cases_new)
 )
+linear_performance
 ```
 
 
@@ -112,7 +112,7 @@ lm_chart <- lm_chart %>%
 
 # Set figure title, x and y-axes titles
 lm_chart <- lm_chart %>% layout(
-  title = "Model Comparison of Daily New Cases",
+  title = "Linear Regression of Daily New Cases",
   xaxis = list(title="Recorded Time"),
   yaxis = list(title="Daily Count of New Cases")
 )%>%
@@ -140,6 +140,7 @@ data_arima <- ts(df_data$cases_active, start=c(init_year,init_day), frequency=36
 head(data_arima)
 ```
 
+# ARIMA Training
 
 ```{r arima_train, echo=TRUE, fig.width=14, fig.height=8}
 arima_model <- auto.arima(df_data$cases_active, trace = TRUE, ic = 'aicc', approximation = FALSE, stepwise = FALSE)
@@ -161,7 +162,6 @@ df_arima <- data.frame(
   cases_active=arima_predict$mean
 )
 
-predict(linear_model, newdata=df_arima)
 combined_prediction <- linear_model %>% predict(df_arima)
 df_combined_predicted <- data.frame(date=df_arima$date, cases_new=combined_prediction)
 ```
@@ -216,4 +216,132 @@ combined_chart <- combined_chart %>% layout(
 combined_chart
 ```
 
+# Fiddling with Poisson
+
+```{r posson_train, echo=TRUE, fig.width=14, fig.height=8}
+poisson_model <- glm(cases_new~cases_active, data=data_train, family=poisson(link="log"))
+summary(poisson_model)
+# plot(gamma_model)
+
+poisson_prediction <- poisson_model %>% predict(data_test)
+poisson_compare <- data.frame(actual=data_test$cases_new, predicted=poisson_prediction)
+head(poisson_compare)
+
+poisson_performance <- data.frame(
+  R2 = R2(poisson_prediction, data_test$cases_new),
+  RMSE = RMSE(poisson_prediction, data_test$cases_new),
+  MAE = MAE(poisson_prediction, data_test$cases_new)
+)
+poisson_performance
+
+# Chisquared comparison, lower means more similar, less than 0.05 best
+anova(linear_model, poisson_model, test="Chisq")
+```
+
+```{r poisson_chart, echo=TRUE, fig.width=14, fig.height=8}
+# Chart init
+df_predicted <- data.frame(date=data_test$date, cases_new=poisson_prediction)
+
+poisson_chart <- plot_ly()
+# Predicted Data
+poisson_chart <- poisson_chart %>% 
+  add_trace(
+    x = df_predicted[["date"]], y = df_predicted[["cases_new"]],
+    name = "Predicted Data",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'red', width = 3)
+  )
+# Test Data
+poisson_chart <- poisson_chart %>% 
+  add_trace(
+    x = df_actual[["date"]], y = df_actual[["cases_new"]],
+    name = "Actual Data",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'skyblue', width = 3)
+  )
+
+poisson_chart <- poisson_chart %>% 
+  add_trace(
+    x = df_train[["date"]], y = df_train[["cases_new"]], 
+    name = "Train Data",
+    type = "scatter",
+    mode = "lines",
+    line = list(color = 'green', width = 1)
+  )
+
+# Set figure title, x and y-axes titles
+poisson_chart <- poisson_chart %>% layout(
+  title = "Poisson Regression of Daily New Cases",
+  xaxis = list(title="Recorded Time"),
+  yaxis = list(title="Daily Count of New Cases")
+)%>%
+  layout(plot_bgcolor='#e5ecf6',
+          xaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff'),
+          yaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff')
+          )
+
+
+poisson_chart
+```
+### It seems like the Poisson model is really bad just by the sight of looking at the graph. Therefore do not relies too much on statistical benchmark such as R2 as the source of truth. The easiest way to determine on hindsight is to visualize, use them! 
+
+# Poisson Prediction
+
+```{r combined_predict_poisson, echo=TRUE, fig.width=14, fig.height=8}
+combined_prediction <- poisson_model %>% predict(df_arima)
+df_combined_predicted <- data.frame(date=df_arima$date, cases_new=combined_prediction)
+
+combined_chart <- plot_ly()
+# Predicted Data
+combined_chart <- combined_chart %>% 
+  add_trace(
+    x = df_combined_predicted[["date"]], y = df_combined_predicted[["cases_new"]],
+    name = "Future Predicted Data",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'red', width = 3)
+  )
+# Test Data
+combined_chart <- combined_chart %>% 
+  add_trace(
+    x = df_smooth[["date"]], y = df_smooth[["cases_new"]],
+    name = "Actual Data (Rolled to Monthly)",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'skyblue', width = 3)
+  )
+# Set figure title, x and y-axes titles
+combined_chart <- combined_chart %>% layout(
+  title = "Prediction of Daily New Cases with Poisson Model",
+  xaxis = list(title="Recorded Time"),
+  yaxis = list(title="Daily Count of New Cases")
+)%>%
+  layout(plot_bgcolor='#e5ecf6',
+          xaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff'),
+          yaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff')
+          )
+
+combined_chart
+```
+
+
 ### End of document
+
+
+
+
+
