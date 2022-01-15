@@ -1,0 +1,186 @@
+---
+title: "ARIMA"
+author: "Chai Kau Yu, Davion"
+date: "`r format(Sys.time(), '%d/%m/%y')`"
+output:
+    prettydoc::html_pretty:
+    theme: HPSTR
+    highlight: github
+    math: katex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE)
+```
+
+# Performing ARIMA on the number of COVID cases in Malaysia
+# Aim to predict the next 60 days of new cases based on historical data
+
+# import libraries
+
+```{r Requirements, echo=TRUE, results='hide', message=FALSE}
+if (!require('readxl')) install.packages('readxl'); library('readxl')
+if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+if (!require('ggplot2')) install.packages('ggplot2'); library('ggplot2')
+if (!require('lubridate')) install.packages('lubridate'); library('lubridate')
+if (!require('forecast')) install.packages('forecast'); library('forecast')
+if (!require('fpp')) install.packages('fpp'); library('fpp')
+if (!require('tseries')) install.packages('tseries'); library('tseries')
+```
+
+# Import dataset
+
+```{r data_ingestion, echo=TRUE}
+mycovid <- read.csv("./cases_malaysia.csv")
+
+head(mycovid)
+colnames(mycovid)
+```
+# A bit of cleaning
+
+```{r data_cleaning, echo=TRUE}
+mycovidnewcases <- mycovid[,c(1:2)]
+colnames(mycovidnewcases)
+str(mycovidnewcases)
+
+mycovidnewcases$date <- as.Date(mycovidnewcases$date, format = "%Y-%m-%d")
+mycovidnewcases
+```
+
+# Plot graph to see trends
+
+```{r data_plot, echo=TRUE}
+covidplot <- ggplot(mycovidnewcases, aes(date, cases_new)) + geom_line()
+covidplot
+```
+
+# Plot ACF and PACF to understand the correlation in a time series data.
+# Autocorrelation is the correlation between a time series and a delayed version of itself (lag).
+# Autocorrelation Function (ACF) plots the correlation coefficient against the lag.
+# The Partial Autocorrelation captures a 'direct' correlation between time series and a lagged version of itself
+```{r ts_plot, echo=TRUE}
+tsdisplay(mycovidnewcases)
+# seasonplot(mycovidnewcases) # Data is not seasonal
+```
+
+```{r ts_test, echo=TRUE}
+# Perform ADF and KPSS test to check stationarity
+# Null hypothesis is that the series is not stationary.
+
+adf = adf.test(mycovidnewcases[,2])
+adf
+# kpss = kpss.test(tsdata2)
+kpss = kpss.test(mycovidnewcases[,2])
+kpss
+```
+
+# the ADF and KPSS test suggests that the data is non-stationary and differencing is required.
+# Split data into train and test set. 
+
+```{r ts_split, echo=TRUE}
+training = mycovidnewcases[1:600,]
+test = mycovidnewcases[601:709,]
+```
+
+# Check how many differencing is needed
+
+```{r ts_diff, echo=TRUE}
+ndiffs(training[,2])  # Differencing of two is required but ARIMA model will do this for us as long as we input correct order (value of d)
+
+# Use auto.arima to find out best model
+
+summary(auto.arima(training[,2], trace = TRUE, ic = 'aicc', approximation = FALSE, stepwise = FALSE)) # Best model and order: ARIMA (4,2,1)
+
+# Train the model with selected ARIMA model
+
+trainingmodel = Arima(training[,2], order = c(4,2,1))
+summary(trainingmodel)
+coeftest(trainingmodel)
+acf(trainingmodel$residuals)
+```
+
+# Make prediction using test set with the training model
+
+```{r ts_predict, echo=TRUE}
+testpred = forecast(test[,2], model = trainingmodel, h = 60, levels = c(95))
+summary(testpred)
+plot(testpred)
+grid(nx = NULL, ny = NULL,
+     lty = 2,
+     col = 'gray',
+     lwd = 2)
+accuracy(testpred)
+```
+
+# END NORMAL
+
+
+
+# With rolling average,
+
+```{r Requirements_rolling, echo=TRUE, results='hide', message=FALSE}
+if (!require('zoo')) install.packages('zoo'); library('zoo')
+```
+
+# Rolling average of 7
+
+```{r roll_plot, echo=TRUE}
+mycovidroll7 = mycovidnewcases %>%
+  mutate(seven_avg = rollmean(mycovidnewcases[,2], 7, align = 'left', fill = 0)) %>%
+  relocate(seven_avg)
+
+head(mycovidroll7)
+
+ggplot(mycovidroll7, aes(date, mycovidnewcases[,2])) + 
+  geom_col(fill = 'pink') + 
+  geom_line(aes(y = seven_avg), color = 'red', size = 0.75) +
+  geom_line(aes(y = mycovidnewcases[,2]), color = 'blue', size = 1) + 
+  labs(title = 'MY COVID data', y = 'covid cases')
+```
+
+# Rolling average of 21 
+
+```{r roll_plot_2, echo=TRUE}
+mycovidroll21 = mycovidnewcases %>%
+  mutate(twoone_avg = rollmean(mycovidnewcases[,2], 21, align = 'left', fill = 0)) %>%
+  relocate(twoone_avg)
+
+ggplot(mycovidroll21, aes(date, mycovidnewcases[,2])) + 
+  geom_col(fill = 'pink') + 
+  geom_line(aes(y = mycovidroll7$seven_avg), color = 'red', size = 0.75) +
+  geom_line(aes(y = mycovidnewcases[,2]), color = 'blue', size = 1) + 
+  geom_line(aes(y = twoone_avg), color = 'green', size = 0.9) +
+  labs(title = 'MY COVID data', y = 'covid cases')
+
+tail(mycovidroll21, 30)
+
+adf21 = adf.test(mycovidroll21[,3])
+adf21
+kpss21 = kpss.test(mycovidroll21[,3])
+kpss21
+
+training21 = mycovidroll21[1:550,]
+test21 = mycovidroll21[551:688,]
+
+ndiffs(training21[,3]) # two differencing
+
+summary(auto.arima(training21[,3], trace = TRUE, ic = 'aicc', approximation = FALSE, stepwise = FALSE)) # Best model and order: ARIMA (3,2,2)
+
+trainingmodel21 = Arima(training21[,3], order = c(3,2,2))
+summary(trainingmodel)
+coeftest(trainingmodel)
+acf(trainingmodel$residuals)
+
+testpred21 = forecast(test21[,3], model = trainingmodel21, h = 30, levels = c(95))
+summary(testpred21)
+plot(testpred21)
+grid(nx = NULL, ny = NULL,
+     lty = 2,
+     col = 'gray',
+     lwd = 2)
+accuracy(testpred21)
+```
+
+# END
+
+
