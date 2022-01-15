@@ -1,0 +1,136 @@
+---
+title: "Linear Regression plot + result table + elevator pitch"
+author: |
+  | Chai Kau Yu, Davion (S2019226)
+  | William Heng Chun Meng (S2005592)
+  | Lim Mei Cee (17162537)
+  | Kamal Suria Asri Raja (S2110703)
+  | Hong Zi Shen (S2114600)
+date: "`r format(Sys.time(), '%d/%m/%y')`"
+output:
+    prettydoc::html_pretty:
+    theme: HPSTR
+    highlight: github
+    math: katex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE)
+```
+
+### R packages to be used.
+
+```{r Requirements, echo=TRUE, results='hide', message=FALSE}
+if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+if (!require('tidyr')) install.packages('tidyr'); library('tidyr')
+if (!require('lubridate')) install.packages('lubridate'); library('lubridate')
+if (!require('tidyquant')) install.packages('tidyquant'); library('tidyquant')
+if (!require('plotly')) install.packages('plotly'); library('plotly')
+# Training
+if (!require('caret')) install.packages('caret'); library('caret')
+```
+
+# Data Import
+
+```{r data_ingestion, echo=TRUE, results='markup'}
+df_country <- read.csv("./cases_malaysia.csv", header=TRUE)
+# Convert date column & sort
+df_country$date <- as.Date(df_country$date, format="%Y-%m-%d")
+df_country <- df_country[order(df_country$date),]
+# Filter data
+df_data <- df_country[,c("date", "cases_new", "cases_active")]
+```
+
+# Linear train
+
+```{r lm_train, echo=TRUE}
+split_ratio <- 0.7
+set.seed(168)
+linear_index <- createDataPartition(df_data$cases_new, p=split_ratio, list=FALSE)
+linear_train <- df_data[linear_index,]
+linear_test <- df_data[-linear_index,]
+
+linear_model <- lm(cases_new~cases_active,data=linear_train)
+summary(linear_model)
+# linear_model <- train(cases_new~date, data=linear_train, method="lm", trControl=linear_train_control)
+
+plot(linear_model)
+```
+
+```{r linear_prediction, echo=TRUE}
+linear_prediction <- linear_model %>% predict(linear_test)
+linear_compare <- data.frame(actual=linear_test$cases_new, predicted=linear_prediction)
+linear_compare
+```
+```{r linear_performance, echo=TRUE}
+data.frame(
+  R2 = R2(linear_prediction, linear_test$cases_new),
+  RMSE = RMSE(linear_prediction, linear_test$cases_new),
+  MAE = MAE(linear_prediction, linear_test$cases_new)
+)
+```
+
+
+```{r linear_performance_chart, echo=TRUE, fig.width=14, fig.height=8}
+# Chart init
+df_predicted <- data.frame(date=linear_test$date, cases_new=linear_prediction)
+df_actual <- linear_test
+df_train <- linear_train
+
+lm_chart <- plot_ly()
+# Predicted Data
+lm_chart <- lm_chart %>% 
+  add_trace(
+    x = df_predicted[["date"]], y = df_predicted[["cases_new"]],
+    name = "Predcited Data",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'red', width = 3)
+  )
+# Test Data
+lm_chart <- lm_chart %>% 
+  add_trace(
+    x = df_actual[["date"]], y = df_actual[["cases_new"]],
+    name = "Actual Data",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'skyblue', width = 3)
+  )
+
+lm_chart <- lm_chart %>% 
+  add_trace(
+    x = df_train[["date"]], y = df_train[["cases_new"]], 
+    name = "Train Data",
+    type = "scatter",
+    mode = "lines",
+    line = list(color = 'green', width = 2)
+  )
+
+# Set figure title, x and y-axes titles
+lm_chart <- lm_chart %>% layout(
+  title = "Model Comparison of Daily New Cases",
+  xaxis = list(title="Recorded Time"),
+  yaxis = list(title="Daily Count of New Cases")
+)%>%
+  layout(plot_bgcolor='#e5ecf6',
+          xaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff'),
+          yaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff')
+          )
+
+
+lm_chart
+```
+
+# Predict future
+
+```{r data_prediction, echo=TRUE, fig.width=14, fig.height=8}
+
+```
+
+### End of document
