@@ -67,6 +67,7 @@ head(linear_compare)
 
 ```{r linear_performance, echo=TRUE}
 linear_performance <- data.frame(
+  MODEL = "Gaussian Linear",
   R2 = R2(linear_prediction, data_test$cases_new),
   RMSE = RMSE(linear_prediction, data_test$cases_new),
   MAE = MAE(linear_prediction, data_test$cases_new)
@@ -198,7 +199,7 @@ combined_chart <- combined_chart %>%
   )
 # Set figure title, x and y-axes titles
 combined_chart <- combined_chart %>% layout(
-  title = "Prediction of Daily New Cases",
+  title = "Prediction of Daily New Cases (Gaussian)",
   xaxis = list(title="Recorded Time"),
   yaxis = list(title="Daily Count of New Cases")
 )%>%
@@ -228,14 +229,12 @@ poisson_compare <- data.frame(actual=data_test$cases_new, predicted=poisson_pred
 head(poisson_compare)
 
 poisson_performance <- data.frame(
+  MODEL = "Poisson GLM",
   R2 = R2(poisson_prediction, data_test$cases_new),
   RMSE = RMSE(poisson_prediction, data_test$cases_new),
   MAE = MAE(poisson_prediction, data_test$cases_new)
 )
 poisson_performance
-
-# Chisquared comparison, lower means more similar, less than 0.05 best
-anova(linear_model, poisson_model, test="Chisq")
 ```
 
 ```{r poisson_chart, echo=TRUE, fig.width=14, fig.height=8}
@@ -320,7 +319,7 @@ combined_chart <- combined_chart %>%
   )
 # Set figure title, x and y-axes titles
 combined_chart <- combined_chart %>% layout(
-  title = "Prediction of Daily New Cases with Poisson Model",
+  title = "Prediction of Daily New Cases (Poisson)",
   xaxis = list(title="Recorded Time"),
   yaxis = list(title="Daily Count of New Cases")
 )%>%
@@ -338,6 +337,13 @@ combined_chart <- combined_chart %>% layout(
 combined_chart
 ```
 
+
+```{r compare_performance, echo=TRUE, fig.width=14, fig.height=8}
+poisson_performance
+linear_performance
+combined_performance <- rbind(linear_performance, poisson_performance)
+combined_performance 
+```
 
 ### End of document
 
