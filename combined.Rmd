@@ -286,15 +286,12 @@ covidplot
 # The Partial Autocorrelation captures a 'direct' correlation between time series and a lagged version of itself
 
 ```{r check_seasonal_and_differencing}
-tsdisplay(mycovidnewcases)
-seasonplot(mycovidnewcases) # Data is not seasonal
-
 # Perform ADF and KPSS test to check stationarity
 # Null hypothesis is that the series is not stationary.
 
 adf = adf.test(mycovidnewcases[,2])
 adf
-kpss = kpss.test(tsdata2)
+kpss = kpss.test(mycovidnewcases[,2])
 kpss
 ```
 
