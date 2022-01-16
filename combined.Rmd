@@ -28,14 +28,27 @@ df_state <- read.csv("models/cases_state.csv", header=TRUE)
 # Map (Zi Shen)
 
 ```{r import_libraries, message=FALSE, warning=FALSE}
+if (!require("caret")) {
+  install.packages("caret", repos = "https://cran.asia/")
+}
 if (!require("dplyr")) {
   install.packages("dplyr", repos = "https://cran.asia/")
+}
+if (!require("forecast")) {
+  install.packages("forecast", repos = "https://cran.asia/")
+}
+if (!require("fpp")) {
+  install.packages("fpp", repos = "https://cran.asia/")
+}
+if (!require("ggplot2")) {
+  install.packages("ggplot2", repos = "https://cran.asia/")
 }
 if (!require("kableExtra")) {
   install.packages("kableExtra", repos = "https://cran.asia/")
 }
-# if (!require("lubridate"))
-#   install.packages("lubridate", repos="https://cran.asia/");
+if (!require("lubridate")) {
+  install.packages("lubridate", repos="https://cran.asia/")
+}
 if (!require("plotly")) {
   install.packages("plotly", repos = "https://cran.asia/")
 }
@@ -45,19 +58,45 @@ if (!require("plyr")) {
 if (!require("raster")) {
   install.packages("raster", repos = "https://cran.asia/")
 }
+if (!require("readxl")) {
+  install.packages("readxl", repos = "https://cran.asia/")
+}
 if (!require("scales")) {
   install.packages("scales", repos = "https://cran.asia/")
+}
+if (!require("tidyquant")) {
+  install.packages("tidyquant", repos = "https://cran.asia/")
+}
+if (!require('tidyr')) {
+  install.packages('tidyr', repos = "https://cran.asia/")
 }
 if (!require("thematic")) {
   install.packages("thematic", repos = "https://cran.asia/")
 }
+if (!require("tseries")) {
+  install.packages("tseries", repos = "https://cran.asia/")
+}
+if (!require("zoo")) {
+  install.packages("zoo", repos = "https://cran.asia/")
+}
 
+
+library(caret)
 library(dplyr)
+library(forecast)
+library(fpp)
+library(ggplot2)
 library(kableExtra)
+library(lubridate)
 library(plotly)
 library(plyr)
 library(raster)
+library(readxl)
 library(scales)
+library(tidyquant)
+library(tidyr)
+library(tseries)
+library(zoo)
 ```
 
 #### Data Ingestion
@@ -244,29 +283,9 @@ df_state$date <- as.Date(df_state$date, format = "%Y-%m-%d")
 ```
 # ARIMA (Kamal)
 
-```{r kamal, echo=TRUE, results='markup'}
-
+```{r data_cleaning}
 # Performing ARIMA on the number of COVID cases in Malaysia
 # Aim to predict the next 60 days of new cases based on historical data
-
-# import libraries
-
-library(readxl)
-library(dplyr)
-library(ggplot2)
-library(lubridate)
-library(forecast)
-library(fpp)
-library(tseries)
-
-
-# Import dataset
-
-df_country <- read.csv("models/cases_malaysia.csv", header=TRUE)
-df_state <- read.csv("models/cases_state.csv", header=TRUE)
-```
-
-```{r data_cleaning}
 # A bit of cleaning
 mycovidnewcases = df_country[,c(1:2)]
 colnames(mycovidnewcases)
@@ -343,10 +362,6 @@ accuracy(testpred)
 
 
 # With rolling average,
-
-```{r import}
-library(zoo)
-```
 
 # Rolling average of 7
 
@@ -430,15 +445,14 @@ accuracy(testpred21)
 # Mixed Model (Davion)
 
 ```{r davion, echo=TRUE, results='markup'}
-df_country <- read.csv("models/cases_malaysia.csv", header=TRUE)
-df_state <- read.csv("models/cases_state.csv", header=TRUE)
+
 ```
 
 # Closing (William)
 
 ```{r william, echo=TRUE, results='markup'}
-df_country <- read.csv("models/cases_malaysia.csv", header=TRUE)
-df_state <- read.csv("models/cases_state.csv", header=TRUE)
+
+
 ```
 
 
