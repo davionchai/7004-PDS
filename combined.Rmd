@@ -1,0 +1,56 @@
+---
+title: "combined"
+author: |
+  | Chai Kau Yu, Davion (S2019226)
+  | William Heng Chun Meng (S2005592)
+  | Lim Mei Cee (17162537)
+  | Kamal Suria Asri Raja (S2110703)
+  | Hong Zi Shen (S2114600)
+date: "`r format(Sys.time(), '%d/%m/%y')`"
+output:
+    prettydoc::html_pretty:
+    theme: HPSTR
+    highlight: github
+    math: katex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE)
+```
+
+# Introduction+Clean/Preprocessing (Mei Cee)
+
+```{r mei_cee, echo=TRUE, results='markup'}
+df_country <- read.csv("./cases_malaysia.csv", header=TRUE)
+df_state <- read.csv("./cases_state.csv", header=TRUE)
+```
+
+# Map (Zi Shen)
+
+```{r zi_shen, echo=TRUE, results='markup'}
+df_country <- read.csv("./cases_malaysia.csv", header=TRUE)
+df_state <- read.csv("./cases_state.csv", header=TRUE)
+```
+
+# Arima (Kamal)
+
+```{r kamal, echo=TRUE, results='markup'}
+df_country <- read.csv("./cases_malaysia.csv", header=TRUE)
+df_state <- read.csv("./cases_state.csv", header=TRUE)
+```
+
+# Mixed Model (Davion)
+
+```{r davion, echo=TRUE, results='markup'}
+df_country <- read.csv("./cases_malaysia.csv", header=TRUE)
+df_state <- read.csv("./cases_state.csv", header=TRUE)
+```
+
+# Closing (William)
+
+```{r william, echo=TRUE, results='markup'}
+df_country <- read.csv("./cases_malaysia.csv", header=TRUE)
+df_state <- read.csv("./cases_state.csv", header=TRUE)
+```
+
+
