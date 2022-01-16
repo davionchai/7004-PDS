@@ -242,12 +242,192 @@ df_state$date <- as.Date(df_state$date, format = "%Y-%m-%d")
     arrange(desc(rate)) %>%
     mutate(rate = paste0(round(cases_total / pop * 100, 2), "%"))
 ```
-
-# Arima (Kamal)
+# ARIMA (Kamal)
 
 ```{r kamal, echo=TRUE, results='markup'}
+
+# Performing ARIMA on the number of COVID cases in Malaysia
+# Aim to predict the next 60 days of new cases based on historical data
+
+# import libraries
+
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(forecast)
+library(fpp)
+library(tseries)
+
+
+# Import dataset
+
 df_country <- read.csv("models/cases_malaysia.csv", header=TRUE)
 df_state <- read.csv("models/cases_state.csv", header=TRUE)
+```
+
+```{r data_cleaning}
+# A bit of cleaning
+mycovidnewcases = df_country[,c(1:2)]
+colnames(mycovidnewcases)
+str(mycovidnewcases)
+head(mycovidnewcases)
+
+mycovidnewcases$date = as.Date(mycovidnewcases$date, format = "%d/%m/%Y")
+
+covidplot = ggplot(mycovidnewcases, aes(date, cases_new)) +
+  geom_line()
+covidplot
+```
+
+# Plot ACF and PACF to understand the correlation in a time series data.
+# Autocorrelation is the correlation between a time series and a delayed version of itself (lag).
+# Autocorrelation Function (ACF) plots the correlation coefficient against the lag.
+# The Partial Autocorrelation captures a 'direct' correlation between time series and a lagged version of itself
+
+```{r check_seasonal_and_differencing}
+tsdisplay(mycovidnewcases)
+seasonplot(mycovidnewcases) # Data is not seasonal
+
+# Perform ADF and KPSS test to check stationarity
+# Null hypothesis is that the series is not stationary.
+
+adf = adf.test(mycovidnewcases[,2])
+adf
+kpss = kpss.test(tsdata2)
+kpss
+```
+
+# the ADF and KPSS test suggests that the data is non-stationary and differencing is required.
+# Split data into train and test set. 
+
+```{r split_train_test}
+training = mycovidnewcases[1:500,]
+test = mycovidnewcases[501:709,]
+```
+
+# Check how many differencing is needed
+
+```{r check_differencing}
+
+ndiffs(training[,2])  # Differencing of one is required but ARIMA model will do this for us as long as we input correct order (value of d)
+
+```
+
+# Use auto.arima to find out best model
+
+```{r auto_arima}
+summary(auto.arima(training[,2], trace = TRUE, ic = 'aicc', approximation = FALSE, stepwise = FALSE)) # Best model and order: ARIMA (3,1,2)
+```
+
+# Train the model with selected ARIMA model
+
+```{r train_model}
+trainingmodel = Arima(training[,2], order = c(3,1,2))
+summary(trainingmodel)
+coeftest(trainingmodel)
+acf(trainingmodel$residuals)
+```
+
+# Make prediction using test set with the training model
+
+```{r prediction}
+testpred = forecast(test[,2], model = trainingmodel, h = 60, levels = c(95))
+summary(testpred)
+plot(testpred)
+grid(nx = NULL, ny = NULL,
+     lty = 2,
+     col = 'gray',
+     lwd = 2)
+accuracy(testpred)
+```
+
+# END ---
+
+
+# With rolling average,
+
+```{r import}
+library(zoo)
+```
+
+# Rolling average of 7
+
+```{r rolling_7}
+mycovidroll7 = mycovidnewcases %>%
+  mutate(seven_avg = rollmean(mycovidnewcases[,2], 7, align = 'left', fill = 0)) %>%
+  relocate(seven_avg)
+
+head(mycovidroll7)
+
+ggplot(mycovidroll7, aes(date, mycovidnewcases[,2])) + 
+  geom_col(fill = 'pink') + 
+  geom_line(aes(y = seven_avg), color = 'red', size = 0.75) +
+  geom_line(aes(y = mycovidnewcases[,2]), color = 'blue', size = 1) + 
+  labs(title = 'MY COVID data', y = 'covid cases')
+```
+
+# Rolling average of 21 
+
+```{r rolling_21}
+mycovidroll21 = mycovidnewcases %>%
+  mutate(twoone_avg = rollmean(mycovidnewcases[,2], 21, align = 'left', fill = 0)) %>%
+  relocate(twoone_avg)
+
+ggplot(mycovidroll21, aes(date, mycovidnewcases[,2])) + 
+  geom_col(fill = 'pink') + 
+  geom_line(aes(y = mycovidroll7$seven_avg), color = 'red', size = 0.75) +
+  geom_line(aes(y = mycovidnewcases[,2]), color = 'blue', size = 1) + 
+  geom_line(aes(y = twoone_avg), color = 'green', size = 0.9) +
+  labs(title = 'MY COVID data', y = 'covid cases')
+
+tail(mycovidroll21, 30)
+```
+
+# ADF and KPSS test
+
+```{r adfkpss}
+adf21 = adf.test(mycovidroll21[,3])
+adf21
+kpss21 = kpss.test(mycovidroll21[,3])
+kpss21
+
+training21 = mycovidroll21[1:480,]
+test21 = mycovidroll21[481:688,]
+```
+
+# Check differencing
+
+```{r differencing}
+ndiffs(training21[,3]) # one differencing
+```
+
+# Find best ARIMA model
+
+```{r autoarima}
+summary(auto.arima(training21[,3], trace = TRUE, ic = 'aicc', approximation = FALSE, stepwise = FALSE)) # Best model and order: ARIMA (2,1,2)
+```
+
+# Train model
+
+```{r train}
+trainingmodel21 = Arima(training21[,3], order = c(2,1,2))
+summary(trainingmodel)
+coeftest(trainingmodel)
+acf(trainingmodel$residuals)
+```
+
+# Make prediction
+
+```{r prediction_rolling21}
+testpred21 = forecast(test21[,3], model = trainingmodel21, h = 30, levels = c(95))
+summary(testpred21)
+plot(testpred21)
+grid(nx = NULL, ny = NULL,
+     lty = 2,
+     col = 'gray',
+     lwd = 2)
+accuracy(testpred21)
 ```
 
 # Mixed Model (Davion)
