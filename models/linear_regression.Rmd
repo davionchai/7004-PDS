@@ -47,7 +47,7 @@ df_data <- df_country[,c("date", "cases_new", "cases_active")]
 
 # Linear train
 
-```{r lm_train, echo=TRUE}
+```{r linear_train, echo=TRUE}
 split_ratio <- 0.7
 set.seed(168)
 split_index <- createDataPartition(df_data$cases_new, p=split_ratio, list=FALSE)

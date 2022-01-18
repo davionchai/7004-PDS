@@ -111,6 +111,15 @@ df <- read.csv(covid_malaysia_endpoint, header = TRUE)
 df_state <- read.csv(covid_state_endpoint, header = TRUE)
 ```
 
+```{r data_ingestion_davion, echo=TRUE, results='markup'}
+df_country <- read.csv("models/cases_malaysia.csv", header=TRUE)
+# Convert date column & sort
+df_country$date <- as.Date(df_country$date, format="%Y-%m-%d")
+df_country <- df_country[order(df_country$date),]
+# Filter data
+df_data <- df_country[,c("date", "cases_new", "cases_active")]
+```
+
 #### Data Initialization
 
 ```{r data_initialization, echo=TRUE, results='markup', result='asis'}
@@ -442,11 +451,328 @@ grid(nx = NULL, ny = NULL,
 accuracy(testpred21)
 ```
 
-# Mixed Model (Davion)
+# Linear Regression
 
-```{r davion, echo=TRUE, results='markup'}
+## Regression Preprocess
+
+```{r regression_preprocess, echo=TRUE}
+split_ratio <- 0.7
+set.seed(168)
+split_index <- createDataPartition(df_data$cases_new, p=split_ratio, list=FALSE)
+data_train <- df_data[split_index,]
+data_test <- df_data[-split_index,]
+```
+
+## Linear Regression Model Training (Gaussian Normal Distribution)
+
+```{r linear_train, echo=TRUE}
+linear_model <- lm(cases_new~cases_active,data=data_train)
+summary(linear_model)
+plot(linear_model)
+```
+
+```{r linear_prediction, echo=TRUE}
+linear_prediction <- linear_model %>% predict(data_test)
+linear_compare <- data.frame(actual=data_test$cases_new, predicted=linear_prediction)
+head(linear_compare)
+```
+
+## Poisson Regression Model Training
+
+```{r posson_train, echo=TRUE}
+poisson_model <- glm(cases_new~cases_active, data=data_train, family=poisson(link="log"))
+summary(poisson_model)
 
 ```
+
+```{r poisson_prediction, echo=TRUE}
+poisson_prediction <- poisson_model %>% predict(data_test)
+poisson_compare <- data.frame(actual=data_test$cases_new, predicted=poisson_prediction)
+head(poisson_compare)
+```
+
+## Performance Comparison
+
+```{r linear_performance, echo=TRUE}
+linear_performance <- data.frame(
+  MODEL = "Gaussian Linear",
+  R2 = R2(linear_prediction, data_test$cases_new),
+  RMSE = RMSE(linear_prediction, data_test$cases_new),
+  MAE = MAE(linear_prediction, data_test$cases_new)
+)
+linear_performance
+```
+
+```{r poisson_performance, echo=TRUE}
+poisson_performance <- data.frame(
+  MODEL = "Poisson GLM",
+  R2 = R2(poisson_prediction, data_test$cases_new),
+  RMSE = RMSE(poisson_prediction, data_test$cases_new),
+  MAE = MAE(poisson_prediction, data_test$cases_new)
+)
+poisson_performance
+```
+
+## Performance Charts
+
+```{r linear_performance_chart, echo=TRUE, fig.width=14, fig.height=8}
+# Chart init
+df_linear_predicted <- data.frame(date=data_test$date, cases_new=linear_prediction)
+df_actual <- data_test
+df_train <- data_train
+
+lm_chart <- plot_ly()
+# Predicted Data
+lm_chart <- lm_chart %>% 
+  add_trace(
+    x = df_linear_predicted[["date"]], y = df_linear_predicted[["cases_new"]],
+    name = "Predicted Data",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'red', width = 3)
+  )
+# Test Data
+lm_chart <- lm_chart %>% 
+  add_trace(
+    x = df_actual[["date"]], y = df_actual[["cases_new"]],
+    name = "Actual Data",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'skyblue', width = 3)
+  )
+
+lm_chart <- lm_chart %>% 
+  add_trace(
+    x = df_train[["date"]], y = df_train[["cases_new"]], 
+    name = "Train Data",
+    type = "scatter",
+    mode = "lines",
+    line = list(color = 'green', width = 2)
+  )
+
+# Set figure title, x and y-axes titles
+lm_chart <- lm_chart %>% layout(
+  title = "Linear Regression of Daily New Cases",
+  xaxis = list(title="Recorded Time"),
+  yaxis = list(title="Daily Count of New Cases")
+)%>%
+  layout(plot_bgcolor='#e5ecf6',
+          xaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff'),
+          yaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff')
+          )
+
+
+lm_chart
+```
+
+```{r poisson_chart, echo=TRUE, fig.width=14, fig.height=8}
+# Chart init
+df_poisson_predicted <- data.frame(date=data_test$date, cases_new=poisson_prediction)
+
+poisson_chart <- plot_ly()
+# Predicted Data
+poisson_chart <- poisson_chart %>% 
+  add_trace(
+    x = df_poisson_predicted[["date"]], y = df_poisson_predicted[["cases_new"]],
+    name = "Predicted Data",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'red', width = 3)
+  )
+# Test Data
+poisson_chart <- poisson_chart %>% 
+  add_trace(
+    x = df_actual[["date"]], y = df_actual[["cases_new"]],
+    name = "Actual Data",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'skyblue', width = 3)
+  )
+
+poisson_chart <- poisson_chart %>% 
+  add_trace(
+    x = df_train[["date"]], y = df_train[["cases_new"]], 
+    name = "Train Data",
+    type = "scatter",
+    mode = "lines",
+    line = list(color = 'green', width = 1)
+  )
+
+# Set figure title, x and y-axes titles
+poisson_chart <- poisson_chart %>% layout(
+  title = "Poisson Regression of Daily New Cases",
+  xaxis = list(title="Recorded Time"),
+  yaxis = list(title="Daily Count of New Cases")
+)%>%
+  layout(plot_bgcolor='#e5ecf6',
+          xaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff'),
+          yaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff')
+          )
+
+
+poisson_chart
+```
+
+# Game Time with ARIMA
+
+## Predict future new cases Using Predicted future active cases from ARIMA Model
+
+```{r arima_preprocess, echo=TRUE, fig.width=14, fig.height=8}
+init_year <- format(as.Date(df_data[1,1], format="%Y-%m-%d"),"%Y")
+init_day <- yday(as.Date(df_data[1,1], format="%Y-%m-%d"))
+data_arima <- ts(df_data$cases_active, start=c(init_year,init_day), frequency=365)
+head(data_arima)
+```
+
+## ARIMA Training
+
+```{r arima_train, echo=TRUE, fig.width=14, fig.height=8}
+arima_model <- auto.arima(df_data$cases_active, trace = TRUE, ic = 'aicc', approximation = FALSE, stepwise = FALSE)
+arima_model
+```
+
+## ARIMA Predict
+
+```{r arima_predict, echo=TRUE, fig.width=14, fig.height=8}
+forecast_length <- 30
+arima_predict <- forecast(arima_model, forecast_length)
+head(arima_predict)
+plot(arima_predict, main = "Predicted Active Cases", col.main = "black")
+```
+
+# Mixed Model Prediction with ARIMA
+
+## Combined Prediction Start!
+
+```{r combined_predict, echo=TRUE, fig.width=14, fig.height=8}
+last_date <- as.Date(df_data[(nrow(df_data)):nrow(df_data),1], format="%Y-%m-%d")
+last_date <- last_date + 1
+df_arima <- data.frame(
+  date=seq(last_date, by = "day", length.out = forecast_length),
+  cases_active=arima_predict$mean
+)
+# Gaussian
+combined_linear_prediction <- linear_model %>% predict(df_arima)
+df_combined_linear_predicted <- data.frame(date=df_arima$date, cases_new=combined_linear_prediction)
+# Poisson
+combined_poisson_prediction <- poisson_model %>% predict(df_arima)
+df_combined_poisson_predicted <- data.frame(date=df_arima$date, cases_new=combined_poisson_prediction)
+```
+
+## Smoothen data for nicer presentation
+
+```{r smoothen_data, echo=TRUE, fig.width=14, fig.height=8}
+df_data$month <- strftime(df_data$date, "%m")
+df_data$year <- strftime(df_data$date, "%Y")
+
+df_smooth <- df_data %>%                         
+  group_by(date=lubridate::floor_date(df_data$date, "month")) %>% 
+  dplyr::summarize(cases_new = mean(cases_new)) %>% 
+  data.frame
+```
+
+## Showtime!
+
+```{r combined_linear_results, echo=TRUE, fig.width=14, fig.height=8}
+combined_linear_chart <- plot_ly()
+# Predicted Data
+combined_linear_chart <- combined_linear_chart %>% 
+  add_trace(
+    x = df_combined_linear_predicted[["date"]], y = df_combined_linear_predicted[["cases_new"]],
+    name = "Future Predicted Data",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'red', width = 3)
+  )
+# Test Data
+combined_linear_chart <- combined_linear_chart %>% 
+  add_trace(
+    x = df_smooth[["date"]], y = df_smooth[["cases_new"]],
+    name = "Actual Data (Rolled to Monthly)",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'skyblue', width = 3)
+  )
+# Set figure title, x and y-axes titles
+combined_linear_chart <- combined_linear_chart %>% layout(
+  title = "Prediction of Daily New Cases (Gaussian)",
+  xaxis = list(title="Recorded Time"),
+  yaxis = list(title="Daily Count of New Cases")
+)%>%
+  layout(plot_bgcolor='#e5ecf6',
+          xaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff'),
+          yaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff')
+          )
+
+combined_linear_chart
+```
+
+```{r combined_poisson_predict, echo=TRUE, fig.width=14, fig.height=8}
+combined_poisson_chart <- plot_ly()
+# Predicted Data
+combined_poisson_chart <- combined_poisson_chart %>% 
+  add_trace(
+    x = df_combined_poisson_predicted[["date"]], y = df_combined_poisson_predicted[["cases_new"]],
+    name = "Future Predicted Data",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'red', width = 3)
+  )
+# Test Data
+combined_poisson_chart <- combined_poisson_chart %>% 
+  add_trace(
+    x = df_smooth[["date"]], y = df_smooth[["cases_new"]],
+    name = "Actual Data (Rolled to Monthly)",
+    type = 'scatter',
+    mode = 'lines',
+    line = list(color = 'skyblue', width = 3)
+  )
+# Set figure title, x and y-axes titles
+combined_poisson_chart <- combined_poisson_chart %>% layout(
+  title = "Prediction of Daily New Cases (Poisson)",
+  xaxis = list(title="Recorded Time"),
+  yaxis = list(title="Daily Count of New Cases")
+)%>%
+  layout(plot_bgcolor='#e5ecf6',
+          xaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff'),
+          yaxis = list(
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = 'ffff')
+          )
+
+combined_poisson_chart
+```
+
+## Statistical Review
+
+```{r compare_performance, echo=TRUE, fig.width=14, fig.height=8}
+combined_performance <- rbind(linear_performance, poisson_performance)
+combined_performance 
+```
+
+It seems like the Poisson model is really bad just by the sight of looking at the graph. Therefore do not relies too much on statistical benchmark such as R2 as the source of truth. The easiest way to determine on hindsight is to visualize, use them! 
 
 # Closing (William)
 
