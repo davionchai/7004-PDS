@@ -20,6 +20,8 @@ knitr::opts_chunk$set(echo=TRUE)
 
 # Introduction+Clean/Preprocessing (Mei Cee)
 
+hello ni hao ma
+
 ```{r mei_cee, echo=TRUE, results='markup'}
 df_country <- read.csv("models/cases_malaysia.csv", header=TRUE)
 df_state <- read.csv("models/cases_state.csv", header=TRUE)
