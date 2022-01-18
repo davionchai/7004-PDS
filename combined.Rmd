@@ -18,14 +18,8 @@ output:
 knitr::opts_chunk$set(echo=TRUE)
 ```
 
-# Introduction+Clean/Preprocessing (Mei Cee)
-
-```{r mei_cee, echo=TRUE, results='markup'}
-df_country <- read.csv("models/cases_malaysia.csv", header=TRUE)
-df_state <- read.csv("models/cases_state.csv", header=TRUE)
-```
-
 # Map (Zi Shen)
+### A series of R packages and libraries are installed beforehand. 
 
 ```{r import_libraries, message=FALSE, warning=FALSE}
 if (!require("caret")) {
@@ -98,7 +92,22 @@ library(tidyr)
 library(tseries)
 library(zoo)
 ```
+# Introduction
+### 
+Coronavirus disease (COVID-19) is an infectious disease caused by the SARS-CoV-2 virus. WHO first learned of this new virus on 31 December 2019, following a report of a cluster of cases of ‘viral pneumonia’ in Wuhan, People’s Republic of China. The virus has been mutated over time resulting in second wave, thrid wave and beyond. This has also lead to "vaccine breakthrough infection" which occurs after a person has been fully vaccinated. That being said, this pandemic is still worrying people globally, so does the number of daily active cases.
 
+# Objectives
+### In this project, there are two objectives to be achieved: 
+* To predict the number of daily active cases
+* To compare the performance of ARIMA model, Linear Regression and Poisson Distribution
+
+# Data Cleaning and Processing
+### Based on the aforementioned objectives, two datasets "cases_malaysia.csv" and "cases_state.csv" were obtained from  https://github.com/MoH-Malaysia/covid19-public and imported to RStudio for further processing to carry out Exploraroty Data Analysis (EDA).
+
+```{r mei_cee, echo=TRUE, results='markup'}
+df_country <- read.csv("models/cases_malaysia.csv", header=TRUE)
+df_state <- read.csv("models/cases_state.csv", header=TRUE)
+```
 #### Data Ingestion
 
 ```{r data_ingestion, echo=TRUE, results='markup', result='asis'}
@@ -152,6 +161,7 @@ malaysia@data$id <- rownames(malaysia@data)
 ```
 
 #### Data Inspection
+#### This is to obtain an overall understanding on the selected datasets of its strucutre and data context such as data types as well as to have a glance of minimum value, maximum value, median and mean of each of the columns.
 
 ```{r data_inspection, echo=TRUE, results='markup', result='asis'}
 # Check the structure of the dataframe
@@ -184,6 +194,7 @@ summary(df_state) %>%
 ```
 
 #### Handle missing/duplicate values
+#### In this part of data cleaning step, it was found out that there was missing data in some of the columns in "df" dataset while there was none in "df_state". The rows with missing data were data recorded for year 2020 and it was not being taken into consideration for predicting daily active cases because data in year 2020 was not of interest for this project.
 
 ```{r handle_missing, echo=TRUE, results='markup', result='asis'}
 # Check for the columns with missing values
