@@ -326,10 +326,10 @@ covidplot = ggplot(mycovidnewcases, aes(date, cases_new)) +
 covidplot
 ```
 
-#### Plot ACF and PACF to understand the correlation in a time series data.
-#### Autocorrelation is the correlation between a time series and a delayed version of itself (lag).
-#### Autocorrelation Function (ACF) plots the correlation coefficient against the lag.
-#### The Partial Autocorrelation captures a 'direct' correlation between time series and a lagged version of itself
+* Plot ACF and PACF to understand the correlation in a time series data.
+* Autocorrelation is the correlation between a time series and a delayed version of itself (lag).
+* Autocorrelation Function (ACF) plots the correlation coefficient against the lag.
+* The Partial Autocorrelation captures a 'direct' correlation between time series and a lagged version of itself
 
 ```{r check_seasonal_and_differencing}
 # Perform ADF and KPSS test to check stationarity
@@ -780,6 +780,8 @@ combined_poisson_chart <- combined_poisson_chart %>% layout(
 
 combined_poisson_chart
 ```
+
+<br>
 
 #### It seems like the Poisson model is really bad just by the sight of looking at the graph. Therefore do not relies too much on statistical benchmark such as R2 as the source of truth. The easiest way to determine on hindsight is to visualize, use them! 
 
