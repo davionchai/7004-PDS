@@ -1,5 +1,5 @@
 ---
-title: "combined"
+title: "A Deep Analysis of Malaysian Covid-19 Cases in 2021"
 author: |
   | Chai Kau Yu, Davion (S2019226)
   | William Heng Chun Meng (S2005592)
@@ -36,6 +36,9 @@ if (!require("fpp")) {
 }
 if (!require("ggplot2")) {
   install.packages("ggplot2", repos = "https://cran.asia/")
+}
+if (!require("gridExtra")) {
+  install.packages("gridExtra", repos = "https://cran.asia/")
 }
 if (!require("kableExtra")) {
   install.packages("kableExtra", repos = "https://cran.asia/")
@@ -80,6 +83,7 @@ library(dplyr)
 library(forecast)
 library(fpp)
 library(ggplot2)
+library(gridExtra)
 library(kableExtra)
 library(lubridate)
 library(plotly)
@@ -776,20 +780,32 @@ combined_poisson_chart <- combined_poisson_chart %>% layout(
 combined_poisson_chart
 ```
 
-## Statistical Review
-
-```{r compare_performance, echo=TRUE, fig.width=14, fig.height=8}
-combined_performance <- rbind(linear_performance, poisson_performance)
-combined_performance 
-```
-
 It seems like the Poisson model is really bad just by the sight of looking at the graph. Therefore do not relies too much on statistical benchmark such as R2 as the source of truth. The easiest way to determine on hindsight is to visualize, use them! 
 
-# Closing (William)
+# Final Thoughts
 
-```{r william, echo=TRUE, results='markup'}
+According to our models, COVID cases will continue to decline if large events such as the General Election, mass gatherings, and other unplanned occurrences do not occur.
 
+The following table is the comparison of performance for all our models:
 
+```{r performance_charts, echo=TRUE, results='markup'}
+arima_performance <- data.frame(
+  MODEL = "ARIMA",
+  R2 = "NaN",
+  RMSE = accuracy(testpred)[, c("RMSE")],
+  MAE =  accuracy(testpred)[, c("MAE")]
+)
+combined_performance <- rbind(linear_performance, poisson_performance, arima_performance)
+kable(combined_performance)
 ```
+
+Note: Arima model’s R2 is not the same metric that can be used for comparison among the models.
+
+It appears that Gaussian Linear model is the best among the 3 models, we hope that our prediction model will help our government to raise awareness among the general public on the effectiveness of COVID-19 prevention measures implementation done.
+Stay safe!
+
+# Thank you!
+
+
 
 
