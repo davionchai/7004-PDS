@@ -18,7 +18,7 @@ output:
 knitr::opts_chunk$set(echo=TRUE)
 ```
 
-### A series of R packages and libraries are installed beforehand. 
+# A series of R packages and libraries are installed beforehand. 
 
 ```{r import_libraries, message=FALSE, warning=FALSE}
 if (!require("caret")) {
@@ -98,19 +98,19 @@ library(zoo)
 
 # Introduction
 
-### Coronavirus disease (COVID-19) is an infectious disease caused by the SARS-CoV-2 virus. WHO first learned of this new virus on 31 December 2019, following a report of a cluster of cases of ‘viral pneumonia’ in Wuhan, People’s Republic of China. The virus has been mutated over time resulting in second wave, thrid wave and beyond. This has also lead to "vaccine breakthrough infection" which occurs after a person has been fully vaccinated. That being said, this pandemic is still worrying people globally, so does the number of daily active cases.
+#### Coronavirus disease (COVID-19) is an infectious disease caused by the SARS-CoV-2 virus. WHO first learned of this new virus on 31 December 2019, following a report of a cluster of cases of ‘viral pneumonia’ in Wuhan, People’s Republic of China. The virus has been mutated over time resulting in second wave, thrid wave and beyond. This has also lead to "vaccine breakthrough infection" which occurs after a person has been fully vaccinated. That being said, this pandemic is still worrying people globally, so does the number of daily active cases.
 
-# Objectives
+### Objectives
 
-### In this project, there are two objectives to be achieved: 
+#### In this project, there are two objectives to be achieved: 
 * To predict the number of daily active cases
 * To compare the performance of ARIMA model, Linear Regression and Poisson Distribution
 
-# Data Cleaning and Processing
+### Data Cleaning and Processing
 
-### Based on the aforementioned objectives, two datasets "cases_malaysia.csv" and "cases_state.csv" were obtained from  https://github.com/MoH-Malaysia/covid19-public and imported to RStudio for further processing to carry out Exploraroty Data Analysis (EDA).
+#### Based on the aforementioned objectives, two datasets "cases_malaysia.csv" and "cases_state.csv" were obtained from  https://github.com/MoH-Malaysia/covid19-public and imported to RStudio for further processing to carry out Exploraroty Data Analysis (EDA).
 
-#### Data Ingestion
+### Data Ingestion
 
 ```{r data_ingestion, echo=TRUE, results='markup', result='asis'}
 # covid_malaysia_endpoint <- "https://raw.githubusercontent.com/MoH-Malaysia/covid19-public/main/epidemic/cases_malasia.csv"
@@ -131,7 +131,7 @@ df_country <- df_country[order(df_country$date),]
 df_data <- df_country[,c("date", "cases_new", "cases_active")]
 ```
 
-#### Data Initialization
+### Data Initialization
 
 ```{r data_initialization, echo=TRUE, results='markup', result='asis'}
 df_population <- data.frame(
@@ -162,7 +162,8 @@ malaysia@data <- mutate(malaysia@data, NAME_1 = replace(NAME_1, NAME_1 == "Putra
 malaysia@data$id <- rownames(malaysia@data)
 ```
 
-#### Data Inspection
+### Data Inspection
+
 #### This is to obtain an overall understanding on the selected datasets of its strucutre and data context such as data types as well as to have a glance of minimum value, maximum value, median and mean of each of the columns.
 
 ```{r data_inspection, echo=TRUE, results='markup', result='asis'}
@@ -195,7 +196,10 @@ summary(df_state) %>%
   kable_styling(font_size = 12)
 ```
 
-#### Handle missing/duplicate values
+<br>
+
+### Handle missing/duplicate values
+
 #### In this part of data cleaning step, it was found out that there was missing data in some of the columns in "df" dataset while there was none in "df_state". The rows with missing data were data recorded for year 2020 and it was not being taken into consideration for predicting daily active cases because data in year 2020 was not of interest for this project.
 
 ```{r handle_missing, echo=TRUE, results='markup', result='asis'}
@@ -229,7 +233,7 @@ df[duplicated(df_state)]
 # There are no duplicated rows
 ```
 
-#### Preprocessing
+### Preprocessing
 
 ```{r preprocessing, echo=TRUE, results='markup', result='asis'}
 # Change date type from String to Date
@@ -237,7 +241,7 @@ df$date <- as.Date(df$date, format = "%Y-%m-%d")
 df_state$date <- as.Date(df_state$date, format = "%Y-%m-%d")
 ```
 
-#### Total Cases
+### Total Cases
 
 ```{r total_cases, echo=TRUE, results='markup', class.source = 'fold-hide'}
   df_total_cases <- df_state %>%
@@ -268,7 +272,7 @@ df_state$date <- as.Date(df_state$date, format = "%Y-%m-%d")
     arrange(desc(cases_total))
 ```
 
-#### Infection Rate
+### Infection Rate
 
 ```{r infection_rate, echo=TRUE, results='markup', class.source = 'fold-hide'}
   df_infection_rate <- df_state %>%
@@ -304,7 +308,7 @@ df_state$date <- as.Date(df_state$date, format = "%Y-%m-%d")
     mutate(rate = paste0(round(cases_total / pop * 100, 2), "%"))
 ```
 
-# ARIMA (Kamal)
+# ARIMA
 
 ```{r data_cleaning}
 # Performing ARIMA on the number of COVID cases in Malaysia
@@ -322,10 +326,10 @@ covidplot = ggplot(mycovidnewcases, aes(date, cases_new)) +
 covidplot
 ```
 
-### Plot ACF and PACF to understand the correlation in a time series data.
-### Autocorrelation is the correlation between a time series and a delayed version of itself (lag).
-### Autocorrelation Function (ACF) plots the correlation coefficient against the lag.
-### The Partial Autocorrelation captures a 'direct' correlation between time series and a lagged version of itself
+#### Plot ACF and PACF to understand the correlation in a time series data.
+#### Autocorrelation is the correlation between a time series and a delayed version of itself (lag).
+#### Autocorrelation Function (ACF) plots the correlation coefficient against the lag.
+#### The Partial Autocorrelation captures a 'direct' correlation between time series and a lagged version of itself
 
 ```{r check_seasonal_and_differencing}
 # Perform ADF and KPSS test to check stationarity
@@ -339,14 +343,14 @@ kpss
 
 ### The ADF and KPSS test suggests that the data is non-stationary and differencing is required.
 
-# Split data into train and test set. 
+## Split data into train and test set. 
 
 ```{r split_train_test}
 training = mycovidnewcases[1:500,]
 test = mycovidnewcases[501:709,]
 ```
 
-# Check how many differencing is needed
+## Check how many differencing is needed
 
 ```{r check_differencing}
 
@@ -354,13 +358,13 @@ ndiffs(training[,2])  # Differencing of one is required but ARIMA model will do 
 
 ```
 
-# Use auto.arima to find out best model
+## Use auto.arima to find out best model
 
 ```{r auto_arima}
 summary(auto.arima(training[,2], trace = TRUE, ic = 'aicc', approximation = FALSE, stepwise = FALSE)) # Best model and order: ARIMA (3,1,2)
 ```
 
-# Train the model with selected ARIMA model
+## Train the model with selected ARIMA model
 
 ```{r train_model}
 trainingmodel = Arima(training[,2], order = c(3,1,2))
@@ -369,7 +373,7 @@ coeftest(trainingmodel)
 acf(trainingmodel$residuals)
 ```
 
-# Make prediction using test set with the training model
+## Make prediction using test set with the training model
 
 ```{r prediction}
 testpred = forecast(test[,2], model = trainingmodel, h = 60, levels = c(95))
@@ -382,9 +386,9 @@ grid(nx = NULL, ny = NULL,
 accuracy(testpred)
 ```
 
-# With rolling average,
+# With rolling average
 
-# Rolling average of 7
+### Rolling average of 7
 
 ```{r rolling_7}
 mycovidroll7 = mycovidnewcases %>%
@@ -400,7 +404,7 @@ ggplot(mycovidroll7, aes(date, mycovidnewcases[,2])) +
   labs(title = 'MY COVID data', y = 'covid cases')
 ```
 
-# Rolling average of 21 
+### Rolling average of 21 
 
 ```{r rolling_21}
 mycovidroll21 = mycovidnewcases %>%
@@ -417,7 +421,7 @@ ggplot(mycovidroll21, aes(date, mycovidnewcases[,2])) +
 tail(mycovidroll21, 30)
 ```
 
-# ADF and KPSS test
+## ADF and KPSS test
 
 ```{r adfkpss}
 adf21 = adf.test(mycovidroll21[,3])
@@ -429,13 +433,13 @@ training21 = mycovidroll21[1:480,]
 test21 = mycovidroll21[481:688,]
 ```
 
-# Check differencing
+## Check differencing
 
 ```{r differencing}
 ndiffs(training21[,3]) # one differencing
 ```
 
-# Find best ARIMA model
+## Find best ARIMA model
 
 ```{r autoarima}
 summary(auto.arima(training21[,3], trace = TRUE, ic = 'aicc', approximation = FALSE, stepwise = FALSE)) # Best model and order: ARIMA (2,1,2)
@@ -639,7 +643,7 @@ poisson_chart
 
 # Game Time with ARIMA
 
-## Predict future new cases Using Predicted future active cases from ARIMA Model
+### Predict future new cases Using Predicted future active cases from ARIMA Model
 
 ```{r arima_preprocess, echo=TRUE, fig.width=14, fig.height=8}
 init_year <- format(as.Date(df_data[1,1], format="%Y-%m-%d"),"%Y")
@@ -648,14 +652,14 @@ data_arima <- ts(df_data$cases_active, start=c(init_year,init_day), frequency=36
 head(data_arima)
 ```
 
-## ARIMA Training
+### ARIMA Training
 
 ```{r arima_train, echo=TRUE, fig.width=14, fig.height=8}
 arima_model <- auto.arima(df_data$cases_active, trace = TRUE, ic = 'aicc', approximation = FALSE, stepwise = FALSE)
 arima_model
 ```
 
-## ARIMA Predict
+### ARIMA Predict
 
 ```{r arima_predict, echo=TRUE, fig.width=14, fig.height=8}
 forecast_length <- 30
@@ -666,7 +670,7 @@ plot(arima_predict, main = "Predicted Active Cases", col.main = "black")
 
 # Mixed Model Prediction with ARIMA
 
-## Combined Prediction Start!
+### Combined Prediction Start!
 
 ```{r combined_predict, echo=TRUE, fig.width=14, fig.height=8}
 last_date <- as.Date(df_data[(nrow(df_data)):nrow(df_data),1], format="%Y-%m-%d")
@@ -683,7 +687,7 @@ combined_poisson_prediction <- poisson_model %>% predict(df_arima)
 df_combined_poisson_predicted <- data.frame(date=df_arima$date, cases_new=combined_poisson_prediction)
 ```
 
-## Smoothen data for nicer presentation
+### Smoothen data for nicer presentation
 
 ```{r smoothen_data, echo=TRUE, fig.width=14, fig.height=8}
 df_data$month <- strftime(df_data$date, "%m")
@@ -695,7 +699,7 @@ df_smooth <- df_data %>%
   data.frame
 ```
 
-## Showtime!
+# Showtime!
 
 ```{r combined_linear_results, echo=TRUE, fig.width=14, fig.height=8}
 combined_linear_chart <- plot_ly()
@@ -777,11 +781,11 @@ combined_poisson_chart <- combined_poisson_chart %>% layout(
 combined_poisson_chart
 ```
 
-It seems like the Poisson model is really bad just by the sight of looking at the graph. Therefore do not relies too much on statistical benchmark such as R2 as the source of truth. The easiest way to determine on hindsight is to visualize, use them! 
+#### It seems like the Poisson model is really bad just by the sight of looking at the graph. Therefore do not relies too much on statistical benchmark such as R2 as the source of truth. The easiest way to determine on hindsight is to visualize, use them! 
 
 # Final Thoughts
 
-### According to our models, COVID cases will continue to decline if large events such as the General Election, mass gatherings, and other unplanned occurrences do not occur.
+#### According to our models, COVID cases will continue to decline if large events such as the General Election, mass gatherings, and other unplanned occurrences do not occur.
 
 ### The following table is the comparison of performance for all our models:
 
@@ -796,11 +800,11 @@ combined_performance <- rbind(linear_performance, poisson_performance, arima_per
 kable(combined_performance)
 ```
 
-### Note: Arima model’s R2 is not the same metric that can be used for comparison among the models.
+##### Note: Arima model’s R2 is not the same metric that can be used for comparison among the models.
 
-### It appears that Gaussian Linear model is the best among the 3 models, we hope that our prediction model will help our government to raise awareness among the general public on the effectiveness of COVID-19 prevention measures implementation done.
+#### It appears that Gaussian Linear model is the best among the 3 models, we hope that our prediction model will help our government to raise awareness among the general public on the effectiveness of COVID-19 prevention measures implementation done.
 
-### Stay safe!
+## Stay safe!
 
 # Thank you!
 
