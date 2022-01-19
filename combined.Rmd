@@ -18,7 +18,6 @@ output:
 knitr::opts_chunk$set(echo=TRUE)
 ```
 
-# Map (Zi Shen)
 ### A series of R packages and libraries are installed beforehand. 
 
 ```{r import_libraries, message=FALSE, warning=FALSE}
@@ -96,19 +95,22 @@ library(tidyr)
 library(tseries)
 library(zoo)
 ```
+
 # Introduction
-### 
-Coronavirus disease (COVID-19) is an infectious disease caused by the SARS-CoV-2 virus. WHO first learned of this new virus on 31 December 2019, following a report of a cluster of cases of ‘viral pneumonia’ in Wuhan, People’s Republic of China. The virus has been mutated over time resulting in second wave, thrid wave and beyond. This has also lead to "vaccine breakthrough infection" which occurs after a person has been fully vaccinated. That being said, this pandemic is still worrying people globally, so does the number of daily active cases.
+
+### Coronavirus disease (COVID-19) is an infectious disease caused by the SARS-CoV-2 virus. WHO first learned of this new virus on 31 December 2019, following a report of a cluster of cases of ‘viral pneumonia’ in Wuhan, People’s Republic of China. The virus has been mutated over time resulting in second wave, thrid wave and beyond. This has also lead to "vaccine breakthrough infection" which occurs after a person has been fully vaccinated. That being said, this pandemic is still worrying people globally, so does the number of daily active cases.
 
 # Objectives
+
 ### In this project, there are two objectives to be achieved: 
 * To predict the number of daily active cases
 * To compare the performance of ARIMA model, Linear Regression and Poisson Distribution
 
 # Data Cleaning and Processing
+
 ### Based on the aforementioned objectives, two datasets "cases_malaysia.csv" and "cases_state.csv" were obtained from  https://github.com/MoH-Malaysia/covid19-public and imported to RStudio for further processing to carry out Exploraroty Data Analysis (EDA).
 
-```{r mei_cee, echo=TRUE, results='markup'}
+```{r data_ingestion_zs, echo=TRUE, results='markup'}
 df_country <- read.csv("models/cases_malaysia.csv", header=TRUE)
 df_state <- read.csv("models/cases_state.csv", header=TRUE)
 ```
@@ -305,6 +307,7 @@ df_state$date <- as.Date(df_state$date, format = "%Y-%m-%d")
     arrange(desc(rate)) %>%
     mutate(rate = paste0(round(cases_total / pop * 100, 2), "%"))
 ```
+
 # ARIMA (Kamal)
 
 ```{r data_cleaning}
@@ -323,10 +326,10 @@ covidplot = ggplot(mycovidnewcases, aes(date, cases_new)) +
 covidplot
 ```
 
-# Plot ACF and PACF to understand the correlation in a time series data.
-# Autocorrelation is the correlation between a time series and a delayed version of itself (lag).
-# Autocorrelation Function (ACF) plots the correlation coefficient against the lag.
-# The Partial Autocorrelation captures a 'direct' correlation between time series and a lagged version of itself
+### Plot ACF and PACF to understand the correlation in a time series data.
+### Autocorrelation is the correlation between a time series and a delayed version of itself (lag).
+### Autocorrelation Function (ACF) plots the correlation coefficient against the lag.
+### The Partial Autocorrelation captures a 'direct' correlation between time series and a lagged version of itself
 
 ```{r check_seasonal_and_differencing}
 # Perform ADF and KPSS test to check stationarity
@@ -338,7 +341,8 @@ kpss = kpss.test(mycovidnewcases[,2])
 kpss
 ```
 
-# the ADF and KPSS test suggests that the data is non-stationary and differencing is required.
+### The ADF and KPSS test suggests that the data is non-stationary and differencing is required.
+
 # Split data into train and test set. 
 
 ```{r split_train_test}
@@ -381,9 +385,6 @@ grid(nx = NULL, ny = NULL,
      lwd = 2)
 accuracy(testpred)
 ```
-
-# END ---
-
 
 # With rolling average,
 
@@ -784,9 +785,9 @@ It seems like the Poisson model is really bad just by the sight of looking at th
 
 # Final Thoughts
 
-According to our models, COVID cases will continue to decline if large events such as the General Election, mass gatherings, and other unplanned occurrences do not occur.
+### According to our models, COVID cases will continue to decline if large events such as the General Election, mass gatherings, and other unplanned occurrences do not occur.
 
-The following table is the comparison of performance for all our models:
+### The following table is the comparison of performance for all our models:
 
 ```{r performance_charts, echo=TRUE, results='markup'}
 arima_performance <- data.frame(
@@ -799,10 +800,11 @@ combined_performance <- rbind(linear_performance, poisson_performance, arima_per
 kable(combined_performance)
 ```
 
-Note: Arima model’s R2 is not the same metric that can be used for comparison among the models.
+### Note: Arima model’s R2 is not the same metric that can be used for comparison among the models.
 
-It appears that Gaussian Linear model is the best among the 3 models, we hope that our prediction model will help our government to raise awareness among the general public on the effectiveness of COVID-19 prevention measures implementation done.
-Stay safe!
+### It appears that Gaussian Linear model is the best among the 3 models, we hope that our prediction model will help our government to raise awareness among the general public on the effectiveness of COVID-19 prevention measures implementation done.
+
+###Stay safe!
 
 # Thank you!
 
