@@ -800,7 +800,7 @@ kable(combined_performance)
 
 ### It appears that Gaussian Linear model is the best among the 3 models, we hope that our prediction model will help our government to raise awareness among the general public on the effectiveness of COVID-19 prevention measures implementation done.
 
-###Stay safe!
+### Stay safe!
 
 # Thank you!
 
