@@ -110,10 +110,6 @@ library(zoo)
 
 ### Based on the aforementioned objectives, two datasets "cases_malaysia.csv" and "cases_state.csv" were obtained from  https://github.com/MoH-Malaysia/covid19-public and imported to RStudio for further processing to carry out Exploraroty Data Analysis (EDA).
 
-```{r data_ingestion_zs, echo=TRUE, results='markup'}
-df_country <- read.csv("models/cases_malaysia.csv", header=TRUE)
-df_state <- read.csv("models/cases_state.csv", header=TRUE)
-```
 #### Data Ingestion
 
 ```{r data_ingestion, echo=TRUE, results='markup', result='asis'}
