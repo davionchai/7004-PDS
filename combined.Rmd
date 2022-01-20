@@ -243,69 +243,78 @@ df_state$date <- as.Date(df_state$date, format = "%Y-%m-%d")
 
 ### Total Cases
 
-```{r total_cases, echo=TRUE, results='markup', class.source = 'fold-hide'}
-  df_total_cases <- df_state %>%
-    group_by(state) %>%
-    summarise_at(vars(cases_new), list(cases_total = sum)) %>%
-    mutate(cases_total = cases_total / 1000) %>%
-    arrange(state) %>%
-    dplyr::rename(NAME_1 = state)
+```{r total_cases, fig.width=18, fig.height=8}
+df_total_cases <- df_state %>%
+  group_by(state) %>%
+  summarise_at(vars(cases_new), list(cases_total = sum)) %>%
+  mutate(cases_total = cases_total / 1000) %>%
+  arrange(state) %>%
+  dplyr::rename(NAME_1 = state)
 
-  malaysia_map <- data.table::copy(malaysia)
-  malaysia_map@data <- join(malaysia_map@data, df_total_cases, by = "NAME_1")
-  malaysia_df <- fortify(malaysia_map)
-  malaysia_df <- join(malaysia_df, malaysia_map@data, by = "id")
+malaysia_map <- data.table::copy(malaysia)
+malaysia_map@data <- join(malaysia_map@data, df_total_cases, by = "NAME_1")
+malaysia_df <- fortify(malaysia_map)
+malaysia_df <- join(malaysia_df, malaysia_map@data, by = "id")
 
-  # https://garthtarr.github.io/meatR/ggplot_extensions.html
-  # https://rstudio-pubs-static.s3.amazonaws.com/160207_ebe47475bb7744429b9bd4c908e2dc45.html
-  ggplot() +
-    geom_polygon(data = malaysia_df, aes(x = long, y = lat, group = group, fill = cases_total), color = "white", size = 0.25) +
-    theme(aspect.ratio = 2 / 5) +
-    scale_fill_distiller(name = "No. of Total Cases (in '000)", palette = "YlOrRd", direction = 1, breaks = pretty_breaks(n = 5)) +
-    labs(title = "Total Cases Since Day 1") +
-    theme_opts
+# https://garthtarr.github.io/meatR/ggplot_extensions.html
+# https://rstudio-pubs-static.s3.amazonaws.com/160207_ebe47475bb7744429b9bd4c908e2dc45.html
+# show total cases on Malaysia map
+ggplot() +
+  geom_polygon(data = malaysia_df, aes(x = long, y = lat, group = group, fill = cases_total), color = "white", size = 0.25) +
+  theme(aspect.ratio = 2 / 5) +
+  scale_fill_distiller(name = "No. of Total Cases (in '000)", palette = "YlOrRd", direction = 1, breaks = pretty_breaks(n = 5)) +
+  labs(title = "Total Cases Since Day 1") +
+  theme_opts
 
-
-  df_total_cases <- df_state %>%
-    group_by(state) %>%
-    summarise_at(vars(cases_new), list(cases_total = sum)) %>%
-    arrange(desc(cases_total))
+# show total cases table
+df_state %>%
+  group_by(state) %>%
+  summarise_at(vars(cases_new), list(cases_total = sum)) %>%
+  arrange(desc(cases_total)) %>%
+  kable("html") %>%
+  scroll_box(width = "100%") %>%
+  kable_styling(font_size = 12)
 ```
 
 ### Infection Rate
 
-```{r infection_rate, echo=TRUE, results='markup', class.source = 'fold-hide'}
-  df_infection_rate <- df_state %>%
-    group_by(state) %>%
-    summarise_at(vars(cases_new), list(cases_total = sum)) %>%
-    dplyr::rename(NAME_1 = state) %>%
-    join(df_population, by = "NAME_1") %>%
-    mutate(rate = cases_total / pop) %>%
-    arrange(NAME_1)
+```{r infection_rate, fig.width=18, fig.height=8}
+df_infection_rate <- df_state %>%
+  group_by(state) %>%
+  summarise_at(vars(cases_new), list(cases_total = sum)) %>%
+  dplyr::rename(NAME_1 = state) %>%
+  join(df_population, by = "NAME_1") %>%
+  mutate(rate = cases_total / pop) %>%
+  arrange(NAME_1)
 
-  malaysia_map <- data.table::copy(malaysia)
-  malaysia_map@data <- join(malaysia_map@data, df_infection_rate, by = "NAME_1")
-  malaysia_df <- fortify(malaysia_map)
-  malaysia_df <- join(malaysia_df, malaysia_map@data, by = "id")
+malaysia_map <- data.table::copy(malaysia)
+malaysia_map@data <- join(malaysia_map@data, df_infection_rate, by = "NAME_1")
+malaysia_df <- fortify(malaysia_map)
+malaysia_df <- join(malaysia_df, malaysia_map@data, by = "id")
 
-  # https://garthtarr.github.io/meatR/ggplot_extensions.html
-  # https://rstudio-pubs-static.s3.amazonaws.com/160207_ebe47475bb7744429b9bd4c908e2dc45.html
-  ggplot() +
-    geom_polygon(data = malaysia_df, aes(x = long, y = lat, group = group, fill = rate), color = "white", size = 0.25) +
-    theme(aspect.ratio = 2 / 5) +
-    scale_fill_distiller(name = "No. of Total Cases (%)", palette = "YlOrRd", direction = 1, breaks = pretty_breaks(n = 5), labels = percent) +
-    labs(title = "Infection Rate based on Total Population") +
-    theme_opts
+# https://garthtarr.github.io/meatR/ggplot_extensions.html
+# https://rstudio-pubs-static.s3.amazonaws.com/160207_ebe47475bb7744429b9bd4c908e2dc45.html
+# show infection rate on Malaysia map
+ggplot() +
+  geom_polygon(data = malaysia_df, aes(x = long, y = lat, group = group, fill = rate), color = "white", size = 0.25) +
+  theme(aspect.ratio = 2 / 5) +
+  scale_fill_distiller(name = "No. of Total Cases (%)", palette = "YlOrRd", direction = 1, breaks = pretty_breaks(n = 5), labels = percent) +
+  labs(title = "Infection Rate based on Total Population") +
+  theme_opts
 
-  df_infection_rate <- df_state %>%
-    group_by(state) %>%
-    summarise_at(vars(cases_new), list(cases_total = sum)) %>%
-    dplyr::rename(NAME_1 = state) %>%
-    join(df_population, by = "NAME_1") %>%
-    dplyr::rename(state = NAME_1) %>%    
-    mutate(rate = cases_total / pop) %>%
-    arrange(desc(rate)) %>%
-    mutate(rate = paste0(round(cases_total / pop * 100, 2), "%"))
+# show infection rate 
+df_state %>%
+  group_by(state) %>%
+  summarise_at(vars(cases_new), list(cases_total = sum)) %>%
+  dplyr::rename(NAME_1 = state) %>%
+  join(df_population, by = "NAME_1") %>%
+  dplyr::rename(state = NAME_1) %>%    
+  mutate(rate = cases_total / pop) %>%
+  arrange(desc(rate)) %>%
+  mutate(rate = paste0(round(cases_total / pop * 100, 2), "%")) %>%
+  kable("html") %>%
+  scroll_box(width = "100%") %>%
+  kable_styling(font_size = 12)
 ```
 
 # ARIMA
@@ -809,7 +818,3 @@ kable(combined_performance)
 ## Stay safe!
 
 # Thank you!
-
-
-
-
